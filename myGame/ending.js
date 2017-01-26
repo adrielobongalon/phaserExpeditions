@@ -1,8 +1,8 @@
 /*
-       document : intro.js, for firstphasergame
-     created on : monday, november 7, 2016, 10:39 AM
+       document : ending.js, for firstphasergame
+     created on : thursday, november 10, 2016, 9:33 AM
          author : adrielo (audrey) bongalon
-    description : to be run before the main part (myGame.js), for 11th grade video game programming expeditions course
+    description : to be run after the main part (myGame.js), for 11th grade video game programming expeditions course
 
 
                                       88
@@ -17,13 +17,13 @@
                                                                     d8'
 */
 
-/* global Phaser game_state game */
+/* global Phaser game_state game */                                             // tells the IDE that Phaser exists in another file
 
 
 
 
-game_state.intro = function() {};
-game_state.intro.prototype = {
+game_state.ending = function() {};
+game_state.ending.prototype = {
 
 /*
     8 888888888o    8 888888888o.    8 888888888888  8 8888           ,o888888o.            .8.          8 888888888o.
@@ -68,29 +68,32 @@ game_state.intro.prototype = {
         game.add.sprite(0, 0, "sky");                                           // add sky background
         this.spacebar = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);   // adds event listener on spacebar
 
-
-
-
-        this.text = game.add.text(10, 10,
-            "Hi. My name is Audrey.\n\nI don't know why, but THERE IS MONEY FALLING FROM THE SKY!\n\nSo help me out here.\nBecause hey. Free money.",
+        this.text1 = game.add.text(10, 10,
+            "Yay. You is rich now. Turns out that god felt like making in rain today.",
             {
                 font: "20px Poppins",
                 fill: "#ffffff"
             }
         );
-        this.text2 = game.add.text(game.world.width / 2 - 100, game.world.height / 2,
-            "(press space to start)", {font: "20px Poppins", fill: "#ffffff"}
+        // i didn't want to put all the text on one line, so i stored them as multiple variables and concatenated them together
+        var a = "Cash rules everything around me.\nC.R.E.A.M.\nGet the money. \nDolla dolla bill 'yall.\n\n";
+        var b = "What. Wu-Tang Clan anybody? No?\n";
+        var c = "I don't even listen to rap that much but...\nidek. forget I said anything";
+        this.text2 = game.add.text(10, 50,
+            a + b + c, {font: "13px Poppins", fill: "#ffffff"}
         );
-
-
-
+        this.text3 = game.add.text(game.world.width / 2 - 100, game.world.height / 2,
+            "Sorry for the terrible animations.    =P", {font: "13px Poppins", fill: "#ffffff"}
+        );
+        this.text3 = game.add.text(game.world.width - 100, game.world.height / 2 + 50,
+            "-Audrey", {font: "20px Poppins", fill: "#ffffff"}
+        );
 
         // black box, used for fades
         this.black = game.add.sprite(0, 0, "black");
-        this.black.alpha = 0;
-        this.fadeIn = game.add.tween(this.black);
-        this.fadeIn.to({alpha: 1}, 1000, Phaser.Easing.Linear.None, false, 0, 0, false);
-        this.fadeIn.onComplete.add(this.switchState, this);
+        this.black.alpha = 1;
+        this.fade = game.add.tween(this.black);
+        this.fade.to({alpha: 0}, 500, Phaser.Easing.Linear.None, true, 0, 0, false);
     },
 
 
@@ -114,28 +117,8 @@ game_state.intro.prototype = {
 */
 
     update: function() {
-        if (this.spacebar.isDown) {
-            this.fadeIn.start();
-        }
+        // nothing
     },
-
-
-
-
-
-
-
-
-    switchState: function() {
-        console.log("switching to main state");
-        game.state.start("main");
-
-        // I tried using an external plugin to create transitions between game states
-        // they didn't work because of WebGL issues -_-
-        // game.state.start("main", Phaser.Plugin.StateTransition.Out.SlideTop, Phaser.Plugin.StateTransition.In.SlideTop);
-        // I settled for using tweens on a plain black PNG file
-    }
 };
 
-game.state.add("intro", game_state.intro);
-game.state.start("intro");
+game.state.add("ending", game_state.ending);

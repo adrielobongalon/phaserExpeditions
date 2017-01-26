@@ -19,7 +19,11 @@
 
 /* global Phaser */                                                             // tells the IDE that Phaser exists in another file
 
-var game = new Phaser.Game(800, 600, Phaser.AUTO, "canvas");
+
+
+
+var canvasDimensions = {width: 800, height: 600};
+var game = new Phaser.Game(canvasDimensions.width, canvasDimensions.height, Phaser.AUTO, "canvas");
 var game_state = {};
 
 var i = 0;
@@ -47,7 +51,7 @@ game_state.main.prototype = {
 	    game.load.image("black", "assets/blackBG.png");
         game.load.image("sky", "assets/sky.png");
         game.load.image("ground", "assets/platform.png");
-        game.load.image("star", "assets/star.png");
+        game.load.spritesheet("cash", "assets/cash-money.png", 92, 48);
         game.load.spritesheet("audrey", "assets/audreyPixelSprite.png", 136, 224);
         game.load.script("webfont", "//ajax.googleapis.com/ajax/libs/webfont/1.4.7/webfont.js");
 	},
@@ -77,7 +81,7 @@ game_state.main.prototype = {
 
         // adds sprites
         game.add.sprite(0, 0, "sky");                                           // add sky background
-        // game.add.sprite(25, 40, "star");                                     // i don't need a star just floating there
+        // game.add.sprite(25, 40, "cash");                                     // i don't need cash just floating there
 
 
 
@@ -108,7 +112,7 @@ game_state.main.prototype = {
         // fades audrey in
         this.fadeAudreyAnimation = game.add.tween(this.player);
         this.fadeAudreyAnimation.to({alpha: 1}, 500, Phaser.Easing.Linear.None, false, 0, 0, false);
-        this.fadeAudreyAnimation.onComplete.add(this.fadeStars, this);
+        this.fadeAudreyAnimation.onComplete.add(this.fadeMoney, this);
 
 
 
@@ -153,21 +157,25 @@ game_state.main.prototype = {
 
 
 
-        this.stars = game.add.group();                                          // create group for stars
-        this.stars.enableBody = true;                                           // enable physics
-        this.stars.alpha = 0;
+        this.money = game.add.group();                                          // create group for money
+        this.money.enableBody = true;                                           // enable physics
+        this.money.alpha = 0;
 
-        // create the individual stars
+        // create the individual groups of cash
         for (i = 0; i < 11; i++) {
-            this.star = this.stars.create(i * 65 + 25, 10, "star");
-            this.star.body.gravity.y = 0;
-            this.star.body.bounce.y = 1;
+            this.cash = this.money.create(i * 65 + 25, 10, "cash");
+            this.cash.scale.setTo(0.5, 0.5);
+            this.cash.animations.add("rotate", [0, 1, 2, 3, 4, 5], 5, true);// order to of frames to run moving animation
+            this.cash.frame = Math.floor(Math.random() * 6);                    // random frame (between 0 and 5)
+            console.log(this.cash.frame);
+            this.cash.body.gravity.y = 0;
+            this.cash.body.bounce.y = 1;
         }
 
-        // fades the stars
-        this.fadeStarsAnimation = game.add.tween(this.stars);
-        this.fadeStarsAnimation.to({alpha: 1}, 500, Phaser.Easing.Linear.None, false, 0, 0, false);
-        this.fadeStarsAnimation.onComplete.add(this.fadeScore, this);
+        // fades the money
+        this.fadeMoneyAnimation = game.add.tween(this.money);
+        this.fadeMoneyAnimation.to({alpha: 1}, 500, Phaser.Easing.Linear.None, false, 0, 0, false);
+        this.fadeMoneyAnimation.onComplete.add(this.fadeScore, this);
 
 
 
@@ -198,6 +206,15 @@ game_state.main.prototype = {
         this.fadeInAnimation = game.add.tween(this.black);
         this.fadeInAnimation.to({alpha: 0}, 500, Phaser.Easing.Linear.None, true, 0, 0, false);
         this.fadeInAnimation.onComplete.add(this.fadePlatforms, this);
+        this.fadeOutAnimation = game.add.tween(this.black);
+        this.fadeOutAnimation.onComplete.add(this.switchState, this);
+        this.fadeOutAnimation.to({alpha: 1}, 1000, Phaser.Easing.Linear.None, false, 1750, 0, false);
+
+
+
+
+        // to make sure the switchState function is called only once
+        this.switching = false;
     },
 
 
@@ -225,8 +242,8 @@ game_state.main.prototype = {
 
         // collision detection
         game.physics.arcade.collide(this.player, this.platforms);                               // player on platforms
-        game.physics.arcade.collide(this.stars, this.platforms);                                // stars on platforms
-        game.physics.arcade.overlap(this.player, this.stars, this.collectStars, null, this);    // player on stars
+        game.physics.arcade.collide(this.money, this.platforms);                                // money on platforms
+        game.physics.arcade.overlap(this.player, this.money, this.collectmoney, null, this);    // player on money
 
 
 
@@ -237,10 +254,10 @@ game_state.main.prototype = {
         
         // keypress detecton
         if (this.player.canMoov && this.arrowKeys.left.isDown) {
-            this.player.animationDirX -= 1;
+            this.player.animationDirX--;
         }
         if (this.player.canMoov && this.arrowKeys.right.isDown) {
-            this.player.animationDirX += 1;
+            this.player.animationDirX++;
         }
         if (this.player.animationDirX < 0) {
             this.player.body.velocity.x = -150;
@@ -286,16 +303,43 @@ game_state.main.prototype = {
             this.player.canMoov = true;
             console.log("audrey movement enabled");
         }
+
+
+
+
+        // money rotating animation
+        this.money.forEach(function(cash) {
+            cash.animations.play("rotate");
+        });
+
+
+
+
+        // win detection
+        // if (this.score >= this.money.length && !this.switching) {
+        if (this.score >= 11 && !this.switching) {
+            this.switching = true;
+            console.log("all money collected");
+            this.fadeOutAnimation.start();
+        }
     },
 
 
 
 
-    collectStars: function(player, star) {
-        star.kill();                                                            // removes the star
+
+
+
+
+    collectmoney: function(player, cash) {
+        cash.kill();                                                            // removes the cash
         this.score++;                                                           // updates the score
         this.scoreText.text = "score: " + this.score;                           // updates the text to display the score
     },
+
+
+
+
 
 
 
@@ -309,17 +353,28 @@ game_state.main.prototype = {
         this.player.body.gravity.y = 1200;                                      // enable gravity
         console.log("audrey spawned");
     },
-    fadeStars: function() {
-        this.fadeStarsAnimation.start();
-        this.stars.forEach(function(star) {
-            star.body.gravity.y = Math.floor(Math.random() * (350 - 250 + 1)) + 250;    // random number between 250 and 350;
-            
+    fadeMoney: function() {
+        this.fadeMoneyAnimation.start();
+        this.money.forEach(function(cash) {
+            cash.body.gravity.y = Math.floor(Math.random() * (350 - 250 + 1)) + 250;    // random number between 250 and 350
         });
-        console.log("stars spawned");
+        console.log("money spawned");
     },
     fadeScore: function() {
         this.fadeScoreAnimation.start();
         console.log("score GUI spawned");
+    },
+
+
+
+
+
+
+
+
+    switchState: function() {
+        console.log("switching to end state");
+        game.state.start("ending");
     }
 };
 
